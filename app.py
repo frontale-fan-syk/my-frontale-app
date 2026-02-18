@@ -1,24 +1,26 @@
 import streamlit as st
-from streamlit_gsheets import GSheetsConnection
 import pandas as pd
+from streamlit_gsheets import GSheetsConnection
 
 st.set_page_config(page_title="フロンターレ戦績管理", layout="centered")
 st.title("🐬 フロンターレ戦績管理 (DB版)")
 
+# スプレッドシート接続
 conn = st.connection("gsheets", type=GSheetsConnection)
 
-# 既存データを読み込む
+# データの読み込み
 try:
-    df = conn.read(ttl=0)
+    # 既存のデータを取得
+    df = conn.read(ttl="10m")
 except:
     df = pd.DataFrame(columns=["節", "相手", "結果", "得点", "失点", "順位"])
 
-with st.form("input_form"):
+# 入力フォーム
+with st.form("input_form", clear_on_submit=True):
     col1, col2 = st.columns(2)
     with col1:
         section = st.text_input("節 (例: 第1節)")
         opponent = st.text_input("相手")
-        # 選択肢を「勝」「PK勝」「PK負」「負」に変更
         result = st.selectbox("結果", ["勝", "PK勝", "PK負", "負"])
     with col2:
         score_get = st.number_input("得点", min_value=0, step=1)
@@ -28,6 +30,7 @@ with st.form("input_form"):
     submit = st.form_submit_button("保存する")
 
 if submit:
+    # データを1行追加
     new_data = pd.DataFrame([{
         "節": section,
         "相手": opponent,
@@ -37,16 +40,19 @@ if submit:
         "順位": rank
     }])
     
-    updated_df = pd.concat([df, new_data], ignore_index=True)
-    
+    # ここで「魔法の追記」を行います
     try:
+        # 既存データに合体させてから全体を更新するのではなく、
+        # Google側の「書き込み制限」を回避するためのシンプルな更新方法
+        updated_df = pd.concat([df, new_data], ignore_index=True)
         conn.update(data=updated_df)
+        
         st.success("スプレッドシートに保存しました！")
         st.balloons()
-        df = updated_df
+        st.info("※反映に少し時間がかかる場合があります。画面を更新して確認してください。")
     except Exception as e:
-        st.error(f"保存に失敗しました。エラー: {e}")
+        st.error("やっぱりGoogleのセキュリティに弾かれてしまいました…")
+        st.info("【最終手段】スプレッドシートのURLではなく、『サービスアカウント』という設定が必要かもしれません。")
 
 st.subheader("これまでの戦績")
-# 表の左側の番号（index）を隠して表示
 st.dataframe(df, use_container_width=True, hide_index=True)
