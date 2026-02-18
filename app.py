@@ -11,7 +11,6 @@ conn = st.connection("gsheets", type=GSheetsConnection)
 try:
     df = conn.read(ttl=0)
 except:
-    # 読み込めない場合は昨日の項目名で空の表を作る
     df = pd.DataFrame(columns=["節", "相手", "結果", "得点", "失点", "順位"])
 
 with st.form("input_form"):
@@ -19,7 +18,8 @@ with st.form("input_form"):
     with col1:
         section = st.text_input("節 (例: 第1節)")
         opponent = st.text_input("相手")
-        result = st.selectbox("結果", ["勝",  "PK勝", "PK負", "負"])
+        # 選択肢を「勝」「PK勝」「PK負」「負」に変更
+        result = st.selectbox("結果", ["勝", "PK勝", "PK負", "負"])
     with col2:
         score_get = st.number_input("得点", min_value=0, step=1)
         score_lose = st.number_input("失点", min_value=0, step=1)
@@ -28,7 +28,6 @@ with st.form("input_form"):
     submit = st.form_submit_button("保存する")
 
 if submit:
-    # 新しいデータを「昨日の項目名」で作成
     new_data = pd.DataFrame([{
         "節": section,
         "相手": opponent,
@@ -46,7 +45,8 @@ if submit:
         st.balloons()
         df = updated_df
     except Exception as e:
-        st.error("保存に失敗しました。スプレッドシートの1行目と名前が合っているか確認してください。")
+        st.error(f"保存に失敗しました。エラー: {e}")
 
 st.subheader("これまでの戦績")
-st.dataframe(df, use_container_width=True)
+# 表の左側の番号（index）を隠して表示
+st.dataframe(df, use_container_width=True, hide_index=True)
