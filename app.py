@@ -17,21 +17,21 @@ except:
 if not df.empty:
     st.subheader("📊 今シーズンの状況")
     
-    # 勝ち点の計算ロジック
-    # 勝=3, PK勝=2, PK負=1, 負=0
+    # 勝ち点の新ルール適用
     def calc_points(res):
-        if res == "勝": return 3
+        if res == "90分勝": return 3
         elif res == "PK勝": return 2
         elif res == "PK負": return 1
-        else: return 0
+        elif res == "90分負": return 0
+        else: return 0  # 念のため、それ以外（引き分けなど）は0
 
     # 全試合の勝ち点を合計
     total_points = df["結果"].apply(calc_points).sum()
-    # 一番下の行（最新）の順位を取得
+    
+    # 以下はそのまま
     latest_rank = df["順位"].iloc[-1] if "順位" in df.columns else "-"
     total_games = len(df)
 
-    # 横に並べて数字を表示
     col1, col2, col3 = st.columns(3)
     col1.metric("総勝ち点", f"{total_points} pt")
     col2.metric("最新順位", f"{latest_rank} 位")
@@ -59,4 +59,5 @@ with st.expander("➕ 新しい試合結果を入力する", expanded=False):
         st.components.v1.iframe(form_url, height=600, scrolling=True)
     else:
         st.warning("GoogleフォームのURLを設定してください。")
+
 
