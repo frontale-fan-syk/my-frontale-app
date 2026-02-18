@@ -60,23 +60,6 @@ if not df.empty:
 
 st.markdown("---")
 
-# --- 2. 戦績一覧 ---
-st.subheader("📅 戦績一覧")
-if not df.empty:
-    # タイムスタンプを隠して表示
-    display_df = df.drop(columns=["タイムスタンプ"], errors="ignore")
-    st.dataframe(display_df, use_container_width=True, hide_index=True)
-
-st.markdown("---")
-
-# --- 3. 入力エリア ---
-with st.expander("➕ 新しい試合結果を入力する", expanded=False):
-    # ここにGoogleフォームのURLを貼り直してください
-    form_url = "https://docs.google.com/forms/d/e/あなたのフォームID/viewform?embedded=true"
-    st.components.v1.iframe(form_url, height=600, scrolling=True)
-
-st.markdown("---")
-
 # --- 2. 戦績一覧 (Table) ---
 st.subheader("📅 戦績一覧")
 if not df.empty:
@@ -97,4 +80,5 @@ with st.expander("➕ 新しい試合結果を入力する", expanded=False):
         st.components.v1.iframe(form_url, height=600, scrolling=True)
     else:
         st.warning("GoogleフォームのURLを設定してください。")
+
 
