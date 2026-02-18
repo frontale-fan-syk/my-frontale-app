@@ -5,47 +5,48 @@ import pandas as pd
 st.set_page_config(page_title="フロンターレ戦績管理", layout="centered")
 st.title("🐬 フロンターレ戦績管理 (DB版)")
 
-# スプレッドシートとの接続
 conn = st.connection("gsheets", type=GSheetsConnection)
 
-# 既存データを読み込む（失敗しても空の表を作る）
+# 既存データを読み込む
 try:
-    df = conn.read(ttl=0) # キャッシュを無効にして最新を読む
+    df = conn.read(ttl=0)
 except:
-    df = pd.DataFrame(columns=["日付", "対戦相手", "スコア", "結果"])
+    # 読み込めない場合は昨日の項目名で空の表を作る
+    df = pd.DataFrame(columns=["節", "相手", "結果", "得点", "失点", "順位"])
 
-# 入力フォーム
 with st.form("input_form"):
-    date = st.date_input("試合日")
-    opponent = st.text_input("対戦相手")
-    score = st.text_input("スコア (例: 2-1)")
-    result = st.selectbox("結果", ["勝ち", "負け", "引き分け"])
+    col1, col2 = st.columns(2)
+    with col1:
+        section = st.text_input("節 (例: 第1節)")
+        opponent = st.text_input("相手")
+        result = st.selectbox("結果", ["勝",  "PK勝", "PK負", "負"])
+    with col2:
+        score_get = st.number_input("得点", min_value=0, step=1)
+        score_lose = st.number_input("失点", min_value=0, step=1)
+        rank = st.number_input("順位", min_value=1, step=1)
+    
     submit = st.form_submit_button("保存する")
 
 if submit:
-    if not opponent or not score:
-        st.warning("対戦相手とスコアを入力してください")
-    else:
-        # 新しいデータを作成
-        new_data = pd.DataFrame([{
-            "日付": str(date),
-            "対戦相手": opponent,
-            "スコア": score,
-            "結果": result
-        }])
-        
-        # 既存データに新しいデータを追加
-        updated_df = pd.concat([df, new_data], ignore_index=True)
-        
-        # 【ここが重要】スプレッドシートを更新
-        try:
-            conn.update(data=updated_df)
-            st.success("スプレッドシートに保存しました！")
-            st.balloons() # お祝いの風船
-            df = updated_df # 表示用データを更新
-        except Exception as e:
-            st.error(f"保存に失敗しました。スプレッドシートの『共有』が『編集者』になっているか確認してください。")
+    # 新しいデータを「昨日の項目名」で作成
+    new_data = pd.DataFrame([{
+        "節": section,
+        "相手": opponent,
+        "結果": result,
+        "得点": score_get,
+        "失点": score_lose,
+        "順位": rank
+    }])
+    
+    updated_df = pd.concat([df, new_data], ignore_index=True)
+    
+    try:
+        conn.update(data=updated_df)
+        st.success("スプレッドシートに保存しました！")
+        st.balloons()
+        df = updated_df
+    except Exception as e:
+        st.error("保存に失敗しました。スプレッドシートの1行目と名前が合っているか確認してください。")
 
-# データの表示
 st.subheader("これまでの戦績")
 st.dataframe(df, use_container_width=True)
