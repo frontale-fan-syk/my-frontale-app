@@ -8,21 +8,6 @@ st.title("🐬 フロンターレ戦績管理")
 # --- データ読み込み ---
 conn = st.connection("gsheets", type=GSheetsConnection)
 try:
-    # 最新データを読み込む
-    df = conn.read(ttl=0)
-except:
-    df = pd.DataFrame()
-
-import streamlit as st
-from streamlit_gsheets import GSheetsConnection
-import pandas as pd
-
-st.set_page_config(page_title="フロンターレ戦績管理", layout="centered")
-st.title("🐬 フロンターレ戦績管理")
-
-# --- データ読み込み ---
-conn = st.connection("gsheets", type=GSheetsConnection)
-try:
     df = conn.read(ttl=0)
 except:
     df = pd.DataFrame()
@@ -60,25 +45,17 @@ if not df.empty:
 
 st.markdown("---")
 
-# --- 2. 戦績一覧 (Table) ---
+# --- 2. 戦績一覧 ---
 st.subheader("📅 戦績一覧")
 if not df.empty:
-    # タイムスタンプ列が存在する場合、それを除外した新しい表(display_df)を作る
+    # タイムスタンプを隠して表示
     display_df = df.drop(columns=["タイムスタンプ"], errors="ignore")
-    
-    # スプレッドシートと同じ並び（最新が一番下）で表示
     st.dataframe(display_df, use_container_width=True, hide_index=True)
-else:
-    st.info("データがまだありません。下のフォームから入力してください。")
 
-# --- 3. 入力エリア (Googleフォーム) ---
+st.markdown("---")
+
+# --- 3. 入力エリア ---
 with st.expander("➕ 新しい試合結果を入力する", expanded=False):
-    # 【https://docs.google.com/forms/d/e/1FAIpQLSerTyVg6oe6KDo887eBIfBXP4_Y9jhW-WujXooSFbZa3NBE0g/viewform?usp=dialog】
+    # https://docs.google.com/forms/d/e/1FAIpQLSerTyVg6oe6KDo887eBIfBXP4_Y9jhW-WujXooSFbZa3NBE0g/viewform?usp=dialog
     form_url = "https://docs.google.com/forms/d/e/1FAIpQLSerTyVg6oe6KDo887eBIfBXP4_Y9jhW-WujXooSFbZa3NBE0g/viewform?usp=dialog"
-    
-    if "http" in form_url:
-        st.components.v1.iframe(form_url, height=600, scrolling=True)
-    else:
-        st.warning("GoogleフォームのURLを設定してください。")
-
-
+    st.components.v1.iframe(form_url, height=600, scrolling=True)
