@@ -1,30 +1,60 @@
 import streamlit as st
 from streamlit_gsheets import GSheetsConnection
+import pandas as pd
 
 st.set_page_config(page_title="フロンターレ戦績管理", layout="centered")
 st.title("🐬 フロンターレ戦績管理")
 
-# --- 1. 入力エリア (Googleフォーム) ---
-st.subheader("📝 試合結果を入力")
+# --- データ読み込み ---
+conn = st.connection("gsheets", type=GSheetsConnection)
+try:
+    # 最新データを読み込む
+    df = conn.read(ttl=0)
+except:
+    df = pd.DataFrame()
 
-# ここに【Googleフォーム】のURLを貼る
-# ※最後が viewform?embedded=true になっているものです
-form_url = "https://docs.google.com/forms/d/e/1FAIpQLSerTyVg6oe6KDo887eBIfBXP4_Y9jhW-WujXooSFbZa3NBE0g/viewform?usp=dialog"
+# --- 1. 成績まとめ (Dashboard) ---
+if not df.empty:
+    st.subheader("📊 今シーズンの状況")
+    
+    # 勝ち点の計算ロジック
+    # 勝=3, PK勝=2, PK負=1, 負=0
+    def calc_points(res):
+        if res == "勝": return 3
+        elif res == "PK勝": return 2
+        elif res == "PK負": return 1
+        else: return 0
 
-if "docs.google.com/forms" in form_url:
-    st.components.v1.iframe(form_url, height=600, scrolling=True)
-else:
-    st.warning("GoogleフォームのURLを正しく貼り付けてください。")
+    # 全試合の勝ち点を合計
+    total_points = df["結果"].apply(calc_points).sum()
+    # 一番下の行（最新）の順位を取得
+    latest_rank = df["順位"].iloc[-1] if "順位" in df.columns else "-"
+    total_games = len(df)
+
+    # 横に並べて数字を表示
+    col1, col2, col3 = st.columns(3)
+    col1.metric("総勝ち点", f"{total_points} pt")
+    col2.metric("最新順位", f"{latest_rank} 位")
+    col3.metric("試合数", f"{total_games} 試合")
 
 st.markdown("---")
 
-# --- 2. 表示エリア (スプレッドシート) ---
-st.subheader("📊 これまでの戦績")
-conn = st.connection("gsheets", type=GSheetsConnection)
-
-try:
-    # ttl=0で最新のデータを読み込む
-    df = conn.read(ttl=0)
+# --- 2. 戦績一覧 (Table) ---
+st.subheader("📅 戦績一覧")
+if not df.empty:
+    # スプレッドシートと同じ並び（最新が一番下）で表示
     st.dataframe(df, use_container_width=True, hide_index=True)
-except Exception as e:
-    st.info("データが入力されると、ここに一覧が表示されます。")
+else:
+    st.info("データがまだありません。下のフォームから入力してください。")
+
+st.markdown("---")
+
+# --- 3. 入力エリア (Googleフォーム) ---
+with st.expander("➕ 新しい試合結果を入力する", expanded=False):
+    # 【https://docs.google.com/forms/d/e/1FAIpQLSerTyVg6oe6KDo887eBIfBXP4_Y9jhW-WujXooSFbZa3NBE0g/viewform?usp=dialog】
+    form_url = "https://docs.google.com/forms/d/e/1FAIpQLSerTyVg6oe6KDo887eBIfBXP4_Y9jhW-WujXooSFbZa3NBE0g/viewform?usp=dialog"
+    
+    if "http" in form_url:
+        st.components.v1.iframe(form_url, height=600, scrolling=True)
+    else:
+        st.warning("GoogleフォームのURLを設定してください。")
