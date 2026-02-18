@@ -29,40 +29,25 @@ if not df.empty:
     total_points = df["結果"].apply(calc_points).sum()
     latest_rank = df["順位"].iloc[-1] if "順位" in df.columns else "-"
     total_games = len(df)
+    
+    # 内訳のカウント
     counts = df["結果"].value_counts()
 
-    # --- 1段目：メイン指標 (2x2で配置) ---
-    # 試合数が中途半端に余るので、3つ＋空欄 または 4つめの指標を入れると綺麗です
-    m_row1_col1, m_row1_col2 = st.columns(2)
-    m_row2_col1, m_row2_col2 = st.columns(2)
+    # 1段目：メインの数字
+    m1, m2, m3 = st.columns(3)
+    m1.metric("🔥 総勝ち点", f"{total_points} pt")
+    m2.metric("🏆 最新順位", f"{latest_rank} 位")
+    m3.metric("⚽ 試合数", f"{total_games}")
 
-    with m_row1_col1:
-        st.metric("🔥 総勝ち点", f"{total_points} pt")
-    with m_row1_col2:
-        st.metric("🏆 最新順位", f"{latest_rank} 位")
-    with m_row2_col1:
-        st.metric("⚽ 試合数", f"{total_games} 試合")
-    with m_row2_col2:
-        # 4つ目が空くと寂しいので「平均勝ち点」などを入れるのもアリです！
-        avg_points = round(total_points / total_games, 2) if total_games > 0 else 0
-        st.metric("📈 平均勝ち点", f"{avg_points}")
+    st.markdown(" ") # 少しスペースを空ける
 
-    st.markdown("---") # 区切り線
-
-    # --- 2段目：戦績詳細 (2x2で配置) ---
-    st.write("**戦績内訳**")
-    d_row1_col1, d_row1_col2 = st.columns(2)
-    d_row2_col1, d_row2_col2 = st.columns(2)
-
-    with d_row1_col1:
-        st.metric("90分勝", f"{counts.get('90分勝', 0)}回")
-    with d_row1_col2:
-        st.metric("PK勝", f"{counts.get('PK勝', 0)}回")
-    with d_row2_col1:
-        st.metric("PK負", f"{counts.get('PK負', 0)}回")
-    with d_row2_col2:
-        st.metric("90分負", f"{counts.get('90分負', 0)}回")
-
+    # 2段目：戦績内訳をカード形式で大きく表示
+    st.write("**戦績詳細**")
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("90分勝", f"{counts.get('90分勝', 0)}")
+    c2.metric("PK勝", f"{counts.get('PK勝', 0)}")
+    c3.metric("PK負", f"{counts.get('PK負', 0)}")
+    c4.metric("90分負", f"{counts.get('90分負', 0)}")
 st.markdown("---")
 
 # --- 2. 戦績一覧 (Table) ---
@@ -85,8 +70,3 @@ with st.expander("➕ 新しい試合結果を入力する", expanded=False):
         st.components.v1.iframe(form_url, height=600, scrolling=True)
     else:
         st.warning("GoogleフォームのURLを設定してください。")
-
-
-
-
-
